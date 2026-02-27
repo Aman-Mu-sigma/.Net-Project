@@ -1,7 +1,7 @@
 name: .NET + Docker CI Pipeline
 
 on:
-  workflow-dispatch;
+  workflow-dispatch:
 
 jobs:
 
