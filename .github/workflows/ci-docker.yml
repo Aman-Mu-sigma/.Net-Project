@@ -1,9 +1,12 @@
-name: .NET + Docker CI Pipeline
+name: CI + DockerHub + Render Deploy
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: amanverma26/testing
+  IMAGE_TAG: latest
+  RENDER_URL: https://testing-latest-hspq.onrender.com
 
 jobs:
 
@@ -30,8 +33,8 @@ jobs:
       - name: Build Application
         run: dotnet build --configuration Release --no-restore
 
-  docker-build-run:
-    name: Build and Run Docker Image
+  docker-build-push-deploy:
+    name: Build Docker Image + Push + Deploy
     runs-on: ubuntu-latest
     needs: build-dotnet
 
@@ -39,27 +42,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      # Login to DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Docker image
       - name: Build Docker Image
-        run: docker build -t devopsfrontend -f DevOpsFrontend/Dockerfile DevOpsFrontend
-
-      - name: Run Docker Container
         run: |
-          docker run -d -p 8080:8080 --name test-container devopsfrontend
+          docker build \
+            -t $IMAGE_NAME:$IMAGE_TAG \
+            -f DevOpsFrontend/Dockerfile \
+            DevOpsFrontend
 
-      - name: Wait For Application To Start
+      # Push to private DockerHub
+      - name: Push Docker Image
+        run: docker push $IMAGE_NAME:$IMAGE_TAG
+
+      # Trigger Render Deploy Hook
+      - name: Trigger Render Deployment
         run: |
-          echo "Waiting for application..."
-          for i in {1..10}; do
-            if curl -s http://localhost:8080 > /dev/null; then
-              echo "Application is up!"
-              break
-            fi
-            echo "Still waiting..."
-            sleep 5
-          done
+          echo "Triggering Render deployment..."
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
 
-      - name: Show Frontend HTML Output
-        run: curl http://localhost:8080
-
-      - name: Show Container Logs
-        run: docker logs test-container
+      # 🔗 Print Public URL
+      - name: Show Live URL
+        run: |
+          echo "====================================="
+          echo " Deployment Triggered Successfully!"
+          echo " Open your application here:"
+          echo "$RENDER_URL"
+          echo "====================================="
