@@ -1,12 +1,19 @@
 name: .NET + Docker CI Pipeline
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
+
   build-dotnet:
     name: Build .NET Application
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: DevOpsFrontend
 
     steps:
       - name: Checkout Code
@@ -18,12 +25,13 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore Dependencies
-        run: dotnet restore DevOpsFrontend/DevOpsFrontend.csproj
+        run: dotnet restore
 
       - name: Build Application
-        run: dotnet build DevOpsFrontend/DevOpsFrontend.csproj --configuration Release --no-restore
+        run: dotnet build --configuration Release --no-restore
 
   docker-build-run:
+    name: Build and Run Docker Image
     runs-on: ubuntu-latest
     needs: build-dotnet
 
@@ -34,21 +42,24 @@ jobs:
       - name: Build Docker Image
         run: docker build -t devopsfrontend -f DevOpsFrontend/Dockerfile DevOpsFrontend
 
-      - name: Run Container
+      - name: Run Docker Container
         run: |
           docker run -d -p 8080:8080 --name test-container devopsfrontend
-          sleep 10
 
-      - name: Check Running Containers
-        run: docker ps
-
-      - name: Wait for App
+      - name: Wait For Application To Start
         run: |
+          echo "Waiting for application..."
           for i in {1..10}; do
-            curl -s http://localhost:8080 && break
-            echo "Waiting for app..."
+            if curl -s http://localhost:8080 > /dev/null; then
+              echo "Application is up!"
+              break
+            fi
+            echo "Still waiting..."
             sleep 5
           done
 
-      - name: Show Logs
+      - name: Show Frontend HTML Output
+        run: curl http://localhost:8080
+
+      - name: Show Container Logs
         run: docker logs test-container
