@@ -18,10 +18,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore Dependencies
-        run: dotnet restore
+        run: dotnet restore DevOpsFrontend/DevOpsFrontend.csproj
 
       - name: Build Application
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build DevOpsFrontend/DevOpsFrontend.csproj --configuration Release --no-restore
 
   docker-build-run:
     name: Build and Run Docker Image
