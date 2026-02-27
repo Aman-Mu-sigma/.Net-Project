@@ -1,10 +1,9 @@
 name: .NET + Docker CI Pipeline
 
 on:
-  workflow-dispatch:
+  workflow_dispatch:
 
 jobs:
-
   build-dotnet:
     name: Build .NET Application
     runs-on: ubuntu-latest
