@@ -4,6 +4,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY DevOpsFrontend.csproj ./
+
 RUN dotnet restore DevOpsFrontend.csproj
 
 COPY . ./
